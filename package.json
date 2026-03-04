@@ -1,0 +1,23 @@
+{
+  "name": "tableau-vizql-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for querying Tableau data sources via VizQL Data Service API",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "tableau",
+    "mcp",
+    "vizql",
+    "data-service"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7"
+  }
+}
