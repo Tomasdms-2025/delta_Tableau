@@ -122,7 +122,7 @@ export class TableauClient {
         `${this.baseUrl}/api/v1/vizql-data-service/read-metadata`,
         {
           datasource: {
-            luid: datasourceLuid
+            datasourceLuid: datasourceLuid
           }
         },
         { headers }
@@ -133,20 +133,22 @@ export class TableauClient {
       const fields = [];
 
       // Parse metadata structure to extract fields
-      if (metadata.columns) {
-        metadata.columns.forEach(column => {
+      if (metadata.data) {
+        metadata.data.forEach(column => {
           fields.push({
-            name: column.name,
+            name: column.fieldName,
+            caption: column.fieldCaption,
             dataType: column.dataType,
-            role: column.role,
-            description: column.description,
-            isGenerated: column.isGenerated
+            role: column.fieldRole,
+            fieldType: column.fieldType,
+            defaultAggregation: column.defaultAggregation
           });
         });
       }
 
       return {
         datasourceLuid,
+        fieldCount: fields.length,
         fields,
         rawMetadata: metadata
       };
@@ -180,18 +182,17 @@ export class TableauClient {
       // Build query request
       const queryRequest = {
         datasource: {
-          luid: datasource_luid
+          datasourceLuid: datasource_luid
         },
         query: {
-          fields: fields.map(field => ({ name: field })),
-          maxRows: max_rows || 1000
+          fields: fields.map(field => ({ fieldCaption: field }))
         }
       };
 
       // Add filters if provided
       if (filters && filters.length > 0) {
         queryRequest.query.filters = filters.map(filter => ({
-          field: { name: filter.field },
+          fieldCaption: filter.field,
           operator: filter.operator,
           values: filter.values
         }));
@@ -200,7 +201,7 @@ export class TableauClient {
       // Add sorts if provided
       if (sorts && sorts.length > 0) {
         queryRequest.query.sorts = sorts.map(sort => ({
-          field: { name: sort.field },
+          fieldCaption: sort.field,
           direction: sort.direction
         }));
       }
@@ -212,25 +213,21 @@ export class TableauClient {
       );
 
       // Parse and format the response
-      const data = response.data;
-      const rows = [];
+      const responseData = response.data;
 
-      if (data.rows) {
-        data.rows.forEach(row => {
-          const rowData = {};
-          fields.forEach((field, index) => {
-            rowData[field] = row.values?.[index];
-          });
-          rows.push(rowData);
-        });
+      // Limit rows if max_rows is specified (API doesn't support limit parameter)
+      let rows = responseData.data || [];
+      if (max_rows && rows.length > max_rows) {
+        rows = rows.slice(0, max_rows);
       }
 
       return {
         datasourceLuid: datasource_luid,
         rowCount: rows.length,
+        totalRows: responseData.data?.length || 0,
         fields,
         rows,
-        rawResponse: data
+        truncated: max_rows && responseData.data?.length > max_rows
       };
     } catch (error) {
       if (error.response?.status === 401) {
