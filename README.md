@@ -39,15 +39,20 @@ A Model Context Protocol (MCP) server that wraps the Tableau VizQL Data Service 
 
 ### Getting Your Tableau Credentials
 
-#### 1. Create a Personal Access Token (PAT)
+#### 1. Create a Personal Access Token (PAT) with VizQL Access
+
+**Important**: The PAT must have **VizQL Data Service API access** permission to use the `get_datasource_metadata` and `query_datasource` tools.
 
 1. Sign in to Tableau Online
 2. Click your profile icon (top right) → **My Account Settings**
 3. Scroll to **Personal Access Tokens** section
 4. Click **Create new token**
-5. Enter a token name (e.g., "Claude MCP Server")
-6. Click **Create**
-7. **Important**: Copy both the **Token Name** and **Token Secret** immediately (you won't see the secret again)
+5. Enter a token name (e.g., "Claude MCP VizQL Server")
+6. **Critical**: Ensure the token has "VizQL Data Service API Access" permission enabled
+7. Click **Create**
+8. **Important**: Copy both the **Token Name** and **Token Secret** immediately (you won't see the secret again)
+
+**Note**: If you get a 403 error with message "VIZQL_DATA_API_ACCESS", your PAT lacks VizQL permissions. Contact your Tableau administrator to enable this permission or create a new PAT with VizQL access.
 
 #### 2. Find Your Pod Name
 
@@ -315,6 +320,24 @@ If you get authentication errors:
 2. Check that TABLEAU_SITE_NAME matches your actual site (check the URL)
 3. Ensure your PAT has appropriate permissions (Explorer or Creator role)
 4. Try creating a new PAT token
+
+### VizQL Permission Errors (403)
+
+If you get error **"403800: VIZQL_DATA_API_ACCESS"**:
+
+**This means your PAT lacks VizQL Data Service permissions.** The `list_datasources` tool will still work (uses REST API), but `get_datasource_metadata` and `query_datasource` will fail.
+
+**Solutions:**
+1. Create a new PAT with "VizQL Data Service API Access" permission enabled
+2. Contact your Tableau administrator to grant VizQL permissions to your existing PAT
+3. Some datasources may not support VizQL - try different published datasources
+
+**To test VizQL access:**
+```bash
+node test-vizql-api.js
+```
+
+This comprehensive test will identify whether the issue is permissions or datasource compatibility.
 
 ### Datasource Not Found
 
